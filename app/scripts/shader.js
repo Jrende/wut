@@ -1,5 +1,4 @@
-var context = require('./gl.js');
-var gl = context.gl;
+var gl = require('./gl.js').gl;
 function getUniformName(parts) {
   var name = parts[2].substring(0, parts[2].length - 1);
   return name;
@@ -32,6 +31,7 @@ function getShaderSource(path) {
 function getShaderSources(name) {
   return Promise.all([getShaderSource("glsl/" + name + ".frag"), getShaderSource("glsl/" + name + ".vert")]);
 }
+
 function compileShader(src, typeStr) {
   var type = null;
   if(typeStr === "x-shader/x-vertex") {
@@ -64,6 +64,20 @@ function createShaderProgram(vertexShader, fragmentShader) {
   return shaderProgram;
 }
 
+function setUniform(shader, value, type) {
+  if(typeof value === "number") {
+    gl.uniform1f(shader, value);
+  } else {
+    switch(type) {
+      case "vec2": gl.uniform2fv(shader, value); break;
+      case "vec3": gl.uniform3fv(shader, value); break;
+      case "vec4": gl.uniform4fv(shader, value); break;
+      case "mat3": gl.uniformMatrix3fv(shader, false, value); break;
+      case "mat4": gl.uniformMatrix4fv(shader, false, value); break;
+    }
+  }
+}
+
 function Shader(vertData, fragData) {
   this.object = createShaderProgram(vertData.program, fragData.program);
   gl.useProgram(this.object);
@@ -76,8 +90,6 @@ function Shader(vertData, fragData) {
     let name = getUniformName(parts);
     let type = parts[1];
     let uniform = gl.getUniformLocation(this.object, name);
-    this[name] = {};
-    this[name].type = parts[1];
     Object.defineProperty(this, name, {
       enumerable: true,
       configurable: false,
@@ -85,8 +97,7 @@ function Shader(vertData, fragData) {
         return type;
       },
       set: function(newValue) {
-        console.log("set uniform " + name);
-        //setUniform(newValue, parts[1]);
+        setUniform(this.object, newValue, parts[1]);
       }
     });
   }
