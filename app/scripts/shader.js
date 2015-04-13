@@ -81,7 +81,7 @@ function setUniform(shader, value, type) {
 function Shader(vertData, fragData) {
   this.object = createShaderProgram(vertData.program, fragData.program);
   gl.useProgram(this.object);
-
+	this.uniformType = {};
   var uniforms = [];
   vertData.uniforms.forEach((u) => uniforms.push(u));
   fragData.uniforms.forEach((u) => uniforms.push(u));
@@ -89,12 +89,13 @@ function Shader(vertData, fragData) {
     var parts = uniforms[i].split(" ");
     let name = getUniformName(parts);
     let type = parts[1];
+		this.uniformType[name] = type;
     let uniform = gl.getUniformLocation(this.object, name);
     Object.defineProperty(this, name, {
       enumerable: true,
       configurable: false,
       get: function() {
-        return type;
+        return uniform;
       },
       set: function(newValue) {
         setUniform(this.object, newValue, parts[1]);
