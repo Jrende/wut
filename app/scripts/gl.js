@@ -1,11 +1,9 @@
-var context = {
-  createContext: function(elm) {
-    var gl = elm.getContext("webgl");
-    if(!gl) {
-      console.log("unable to initialize gl");
-    }
-    this.gl = gl;
-    return gl;
+function createContext(elm) {
+  var gl = elm.getContext("webgl");
+  if(!gl) {
+    console.log("unable to initialize gl");
   }
+  createContext.gl = gl;
+  return gl;
 }
-module.exports = context;
+module.exports = createContext;
