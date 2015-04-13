@@ -64,24 +64,26 @@ function createShaderProgram(vertexShader, fragmentShader) {
   return shaderProgram;
 }
 
-function setUniform(shader, value, type) {
+function setUniform(uniform, value, type) {
   if(typeof value === "number") {
-    gl.uniform1f(shader, value);
+    gl.uniform1f(uniform, value);
   } else {
     switch(type) {
-      case "vec2": gl.uniform2fv(shader, value); break;
-      case "vec3": gl.uniform3fv(shader, value); break;
-      case "vec4": gl.uniform4fv(shader, value); break;
-      case "mat3": gl.uniformMatrix3fv(shader, false, value); break;
-      case "mat4": gl.uniformMatrix4fv(shader, false, value); break;
+      case "vec2": gl.uniform2fv(uniform, value); break;
+      case "vec3": gl.uniform3fv(uniform, value); break;
+      case "vec4": gl.uniform4fv(uniform, value); break;
+      case "mat3": gl.uniformMatrix3fv(uniform, false, value); break;
+      case "mat4": gl.uniformMatrix4fv(uniform, false, value); break;
     }
   }
 }
 
 function Shader(vertData, fragData) {
   this.object = createShaderProgram(vertData.program, fragData.program);
-  gl.useProgram(this.object);
-	this.uniformType = {};
+  this.use = function() {
+    gl.useProgram(this.object);
+  }
+  this.uniformType = {};
   var uniforms = [];
   vertData.uniforms.forEach((u) => uniforms.push(u));
   fragData.uniforms.forEach((u) => uniforms.push(u));
@@ -89,7 +91,7 @@ function Shader(vertData, fragData) {
     var parts = uniforms[i].split(" ");
     let name = getUniformName(parts);
     let type = parts[1];
-		this.uniformType[name] = type;
+    this.uniformType[name] = type;
     let uniform = gl.getUniformLocation(this.object, name);
     Object.defineProperty(this, name, {
       enumerable: true,
@@ -98,7 +100,7 @@ function Shader(vertData, fragData) {
         return uniform;
       },
       set: function(newValue) {
-        setUniform(this.object, newValue, parts[1]);
+        setUniform(uniform, newValue, type);
       }
     });
   }
