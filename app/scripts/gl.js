@@ -37,4 +37,4 @@ function createContext(elm, debugMode) {
 
   return gl;
 }
-odule.exports = createContext;
+module.exports = createContext;
