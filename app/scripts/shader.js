@@ -1,8 +1,4 @@
 var gl = require('./gl.js').gl;
-function getUniformName(parts) {
-  var name = parts[2].substring(0, parts[2].length - 1);
-  return name;
-}
 
 function getShaderSource(path) {
   var p = new Promise(function(resolve, reject) {
@@ -61,6 +57,8 @@ function createShaderProgram(vertexShader, fragmentShader) {
     console.err("Could not initialise shaders");
   }
   gl.useProgram(shaderProgram);
+  var loc = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(loc);
   return shaderProgram;
 }
 
@@ -78,7 +76,8 @@ function setUniform(uniform, value, type) {
   }
 }
 
-function Shader(vertData, fragData) {
+function Shader(name, vertData, fragData) {
+  this.name = name;
   this.object = createShaderProgram(vertData.program, fragData.program);
   this.use = function() {
     gl.useProgram(this.object);
@@ -89,57 +88,65 @@ function Shader(vertData, fragData) {
   fragData.uniforms.forEach((u) => uniforms.push(u));
   for(var i = 0; i < uniforms.length; i++) {
     var parts = uniforms[i].split(" ");
-    let name = getUniformName(parts);
-    let type = parts[1];
+
+    var name = parts[2].substring(0, parts[2].length - 1);
+    var type = parts[1];
+    var uniform = gl.getUniformLocation(this.object, name);
+
     this.uniformType[name] = type;
-    let uniform = gl.getUniformLocation(this.object, name);
     Object.defineProperty(this, name, {
       enumerable: true,
       configurable: false,
-      get: function() {
-        return uniform;
-      },
-      set: function(newValue) {
-        setUniform(uniform, newValue, type);
-      }
+      get: getUniformGetter(uniform),
+      set: getUniformSetter(uniform, type)
     });
+  }
+}
+
+function getUniformGetter(uniform) {
+  return function() {
+    return uniform;
+  }
+}
+
+function getUniformSetter(uniform, type) {
+  return function(newValue) {
+    setUniform(uniform, newValue, type);
   }
 }
 
 Shader.createShader = function(name) {
   return new Promise(function(resolve, reject) {
-    var shaderSources = [];
-    var progs = {};
     var shaders = [];
     var promise = ["glsl/" + name + ".frag", "glsl/" + name + ".vert"]
-    .map(getShaderSource)
-    .reduce(function(sequence, promise) {
-      return sequence.then(function() {
-        return promise;
-      })
-      .then(function(shaderSrc) {
-        console.log("create program " + name + " of type " + shaderSrc.type);
-        var program = compileShader(shaderSrc.src, shaderSrc.type);
-        if(program == null) {
-          //Which promise actually gets rejected?
-          reject();
-          return;
-        }
-        var uniforms = shaderSrc.src.match(/uniform.*/g);
-        if(uniforms == null) uniforms = [];
-        shaders[shaderSrc.type] = {
-          program: program,
-        src: shaderSrc.src,
-        uniforms: uniforms
-        }
-      })
-    }, Promise.resolve())
-    .then(function(e) {
-      var vert = shaders["x-shader/x-vertex"]
-      var frag = shaders["x-shader/x-fragment"]
-      var shader = new Shader(vert, frag);
-    resolve(shader)
-    });
+      .map(getShaderSource)
+      .reduce(function(sequence, promise) {
+        return sequence.then(function() {
+          return promise;
+        })
+        .then(function(shaderSrc) {
+          //console.log("create program " + name + " of type " + shaderSrc.type);
+          var program = compileShader(shaderSrc.src, shaderSrc.type);
+          if(program == null) {
+            //Which promise actually gets rejected?
+            reject();
+            return;
+          }
+          var uniforms = shaderSrc.src.match(/uniform.*/g);
+          if(uniforms == null) uniforms = [];
+          shaders[shaderSrc.type] = {
+            program: program,
+            src: shaderSrc.src,
+            uniforms: uniforms
+          }
+        })
+      }, Promise.resolve())
+      .then(function(e) {
+        var vert = shaders["x-shader/x-vertex"]
+        var frag = shaders["x-shader/x-fragment"]
+        var shader = new Shader(name, vert, frag);
+      resolve(shader)
+      });
   });
 }
 
