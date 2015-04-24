@@ -4,7 +4,12 @@ var gl = context.gl;
 var Shader = require('./shader.js')
 var VertexArray = require('./vertexbuffer.js');
 var Emitter = require('./emitter.js');
-new Emitter().spread(2);
+var emitter = new Emitter(5).spread(360).acceleration(5);
+for(var i = 0; i < 10; i++) {
+	emitter.tick();
+}
+window.emitter = emitter;
+
 Promise.all(["test"].map(Shader.createShader)).then((shaders) => {
   gl.clearColor(0, 0, 0, 1);
   gl.disable(gl.CULL_FACE);

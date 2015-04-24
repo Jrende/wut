@@ -16,42 +16,52 @@ var Cores = 8
 function Emitter(maxParticles = 500) {
   var self = this;
 
+  if(maxParticles < 100) Cores = 1;
   var part = Math.floor(maxParticles / Cores);
   var rest = maxParticles % Cores;
 
-  self.particles = function(i, value) {
-    var arrayIndex = Math.floor(i / part);
-    var indexInArray = i % part;
+  self.particles = [];
+  self.particles.get = function(particle, attribute, value) {
+    var arrayIndex = Math.floor(particle / part);
+    var indexInArray = particle % part;
     if(arrayIndex == Cores) {
       arrayIndex -= 1;
       indexInArray += part;
     }
     if(value != null) {
-      self.particles[arrayIndex][indexInArray] = value;
+      self.particles[arrayIndex][indexInArray * ParticleSize + attribute] = value;
     }
-    return self.particles[arrayIndex][indexInArray];
+    return self.particles[arrayIndex][indexInArray * ParticleSize + attribute];
   };
 
   for(var i = 0; i < Cores; i++) {
     var size = part + (i==Cores - 1? rest : 0);
-    self.particles[i] = new Float32Array(size);
+    self.particles[i] = new Float32Array(size * ParticleSize);
   }
 
-  self.particles(0, 1);
-  self.particles(499, 1);
   var createParticle = function() {
     //Sort particles by ttl
-    var particle = lastParticle * ParticleSize;
-    self.particles[particle + PosX] = self.values.pos[0];
-    self.particles[particle + PosY] = self.values.pos[1];
-    self.particles[particle + PosZ] = self.values.pos[2];
-    self.particles[particle + TimeToLive] = self.values.ttl;
+    var particle = particleCount;
+    self.particles.get(particle, PosX, self.values.pos[0]);
+    self.particles.get(particle, PosY, self.values.pos[1]);
+    self.particles.get(particle, PosZ, self.values.pos[2]);
+    self.particles.get(particle, TimeToLive, self.values.ttl);
     self.getFunction(particle);
+    particleCount++;
   }
 
   var timeSinceLastParticle = 0;
+  var particleCount = 0;
 
-  self.values = {};
+  //Default values
+  self.values = {
+    pos: [0, 0, 0],
+    growth: 1,
+    spread: () => Math.random() * 360,
+    acceleration: () => 1,
+    size: 1,
+    ttl: 100
+  };
 
   self.pos = function(x, y, z) {
     self.values.pos = [x,y,z];
@@ -83,21 +93,34 @@ function Emitter(maxParticles = 500) {
   }
 
   self.tick = function() {
-    if(timeSinceLastParticle > growth && particleCount < maxParticles) {
+    //if(timeSinceLastParticle < this.values.growth && particleCount < maxParticles) {
+    if(particleCount < maxParticles) {
+      console.log("create particle");
       createParticle();
+      timeSinceLastParticle = new Date().getTime();
+    }
+    var fun = self.getFunction();
+    for(var i = 0; i < particleCount; i++) {
+      fun(i);
     }
   }
 
   self.getFunction = function() {
     return function(particle) {
-      particles[particle + Velocity] *= self.values.acceleration(particle);
-      var velocity = particles[particle + Velocity];
+      var velocity = self.particles.get(particle, Velocity) + self.values.acceleration(particle);
+      self.particles.get(particle, Velocity, velocity);
 
-      particles[particle + PosX] += velocity;
-      particles[particle + PosY] += velocity;
-      particles[particle + PosZ] += velocity;
+      var posX = self.particles.get(particle, PosX);
+      self.particles.get(particle, PosX, posX + velocity);
 
-      particles[particle + TimeToLive] -= 1;
+      var posY = self.particles.get(particle, PosY);
+      self.particles.get(particle, PosY, posY + velocity);
+
+      var posZ = self.particles.get(particle, PosZ);
+      self.particles.get(particle, PosZ, posZ + velocity);
+
+      var ttl = self.particles.get(particle, TimeToLive);
+      self.particles.get(particle, TimeToLive, ttl - 1);
     }
 	}
 }
