@@ -3,6 +3,8 @@ context(document.querySelector("#canvas"));
 var gl = context.gl;
 var Shader = require('./shader.js')
 var VertexArray = require('./vertexbuffer.js');
+var Emitter = require('./emitter.js');
+new Emitter().spread(2);
 Promise.all(["test"].map(Shader.createShader)).then((shaders) => {
   gl.clearColor(0, 0, 0, 1);
   gl.disable(gl.CULL_FACE);
