@@ -14,68 +14,83 @@ var TimeToLive = 4;
 var Cores = 8
 
 function Emitter(maxParticles = 500) {
-  this.particles = function() {
-  }
-  (function() {
-    var part = Math.floor(maxParticles / cores);
-    var rest = maxParticles % cores;
-    for(var i = 0; i < cores; i++) {
-      var size = part + (i==0? rest : 0);
-      this.particles[i] = ArrayBuffer(size*Float32Array.BYTES_PER_ELEMENT);
+  var self = this;
+
+  var part = Math.floor(maxParticles / Cores);
+  var rest = maxParticles % Cores;
+
+  self.particles = function(i, value) {
+    var arrayIndex = Math.floor(i / part);
+    var indexInArray = i % part;
+    if(arrayIndex == Cores) {
+      arrayIndex -= 1;
+      indexInArray += part;
     }
-  })()
+    if(value != null) {
+      self.particles[arrayIndex][indexInArray] = value;
+    }
+    return self.particles[arrayIndex][indexInArray];
+  };
+
+  for(var i = 0; i < Cores; i++) {
+    var size = part + (i==Cores - 1? rest : 0);
+    self.particles[i] = new Float32Array(size);
+  }
+
+  self.particles(0, 1);
+  self.particles(499, 1);
   var createParticle = function() {
     //Sort particles by ttl
     var particle = lastParticle * ParticleSize;
-    this.particles[particle + PosX] = this.values.pos[0];
-    this.particles[particle + PosY] = this.values.pos[1];
-    this.particles[particle + PosZ] = this.values.pos[2];
-    this.particles[particle + TimeToLive] = this.values.ttl;
-    this.getFunction(particle);
+    self.particles[particle + PosX] = self.values.pos[0];
+    self.particles[particle + PosY] = self.values.pos[1];
+    self.particles[particle + PosZ] = self.values.pos[2];
+    self.particles[particle + TimeToLive] = self.values.ttl;
+    self.getFunction(particle);
   }
 
   var timeSinceLastParticle = 0;
 
-  this.values = {};
+  self.values = {};
 
-  this.pos = function(x, y, z) {
-    this.values.pos = [x,y,z];
-  } 
-
-  this.spread = function(spread) {
-    this.values.spread = toFunction(spread);
-    return this;
-  } 
-
-  this.acceleration = function(acceleration) {
-    this.values.acceleration = toFunction(acceleration);
-    return this;
-  } 
-
-  this.growth = function(growth) {
-    this.values.growth = growth;
-    return this;
-  } 
-  
-  this.size = function(size) {
-    this.values.size = size;
-    return this;
+  self.pos = function(x, y, z) {
+    self.values.pos = [x,y,z];
   }
 
-  this.timeToLive(ttl) {
-    this.values.ttl = toFunction(ttl);
-    return this;
+  self.spread = function(spread) {
+    self.values.spread = toFunction(spread);
+    return self;
   }
 
-  this.tick() {
+  self.acceleration = function(acceleration) {
+    self.values.acceleration = toFunction(acceleration);
+    return self;
+  }
+
+  self.growth = function(growth) {
+    self.values.growth = growth;
+    return self;
+  }
+
+  self.size = function(size) {
+    self.values.size = size;
+    return self;
+  }
+
+  self.timeToLive = function(ttl){
+    self.values.ttl = toFunction(ttl);
+    return self;
+  }
+
+  self.tick = function() {
     if(timeSinceLastParticle > growth && particleCount < maxParticles) {
       createParticle();
     }
   }
 
-  this.getFunction() {
+  self.getFunction = function() {
     return function(particle) {
-      particles[particle + Velocity] *= this.values.acceleration(particle);
+      particles[particle + Velocity] *= self.values.acceleration(particle);
       var velocity = particles[particle + Velocity];
 
       particles[particle + PosX] += velocity;
@@ -84,6 +99,7 @@ function Emitter(maxParticles = 500) {
 
       particles[particle + TimeToLive] -= 1;
     }
+	}
 }
 
 module.exports = Emitter;
