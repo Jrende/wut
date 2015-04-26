@@ -66,7 +66,7 @@ gulp.task('bundle', ['styles'], function(){
 
 gulp.task('javascript', function() {
   var bundler = browserify({
-      entries: ['./app/scripts/main.js'],
+      entries: ['app/scripts/main.js'],
       debug: true
   })
 
@@ -78,7 +78,7 @@ gulp.task('javascript', function() {
       .pipe(sourcemaps.init({loadMaps: true}))
       //.pipe(babelify())
       .pipe(sourcemaps.write('./'))
-      .pipe(gulp.dest('./dist/scripts/'));
+      .pipe(gulp.dest('dist/scripts/'));
   };
 
   return bundle();
@@ -87,13 +87,18 @@ gulp.task('javascript', function() {
 
 // Webserver
 gulp.task('serve', function () {
-    gulp.src('./dist')
+    gulp.src('dist')
         .pipe($.webserver({
             livereload: true,
             port: 9000
         }));
 });
-//
+
+gulp.task('test', function() {
+    gulp.src('test/**/*.js')
+    .pipe($.mocha({reporter: 'spec'}))
+});
+
 // Robots.txt and favicon.ico
 gulp.task('extras', function () {
     return gulp.src(['app/*.txt', 'app/*.ico'])

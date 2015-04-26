@@ -19,6 +19,8 @@
     "gulp-sourcemaps": "latest",
     "gulp-useref": "latest",
     "gulp-webserver": "latest",
+    "gulp-mocha": "latest",
+    "mocha": "latest",
     "path": "latest",
     "to-fast-properties": "^1.0.1",
     "vinyl-buffer": "latest",
