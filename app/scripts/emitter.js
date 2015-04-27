@@ -4,16 +4,30 @@ function toFunction(value) {
 
 //particle is an id (long), backed by values in an Float32Array
 
-var ParticleSize = 5;
-var PosX = 0;
-var PosY = 1;
-var PosZ = 2;
-var Velocity = 3;
-var TimeToLive = 4;
+var particleSize = 5;
+var attrs = [
+	"posX",
+	"posY",
+	"posZ",
+	"vX",
+	"vY",
+	"vZ",
+	"accel",
+	"ttl"
+]
 
 var Cores = 8
 
 function Emitter(maxParticles = 500) {
+
+	var p = {};
+	var particleSize = attrs.length;
+	(function() {
+	var i = 0
+	for(let attr of attrs) {
+		p[attr] = i++;
+	}
+	})();
   var self = this;
 
   if(maxParticles < 100) Cores = 1;
@@ -21,7 +35,7 @@ function Emitter(maxParticles = 500) {
   var rest = maxParticles % Cores;
 
   self.particles = [];
-  self.particles.get = function(particle, attribute, value) {
+  self.particles.set = function(particle, attribute, value) {
     var arrayIndex = Math.floor(particle / part);
     var indexInArray = particle % part;
     if(arrayIndex == Cores) {
@@ -29,26 +43,48 @@ function Emitter(maxParticles = 500) {
       indexInArray += part;
     }
     if(value != null) {
-      self.particles[arrayIndex][indexInArray * ParticleSize + attribute] = value;
+      self.particles[arrayIndex][indexInArray * particleSize + attribute] = value;
     }
-    return self.particles[arrayIndex][indexInArray * ParticleSize + attribute];
+	}
+
+  self.particles.get = function(particle, attribute) {
+    var arrayIndex = Math.floor(particle / part);
+    var indexInArray = particle % part;
+    if(arrayIndex == Cores) {
+      arrayIndex -= 1;
+      indexInArray += part;
+    }
+    return self.particles[arrayIndex][indexInArray * particleSize + attribute];
   };
 
   for(var i = 0; i < Cores; i++) {
     var size = part + (i==Cores - 1? rest : 0);
-    self.particles[i] = new Float32Array(size * ParticleSize);
+    self.particles[i] = new Float32Array(size * particleSize);
   }
 
   var createParticle = function() {
     //Sort particles by ttl
     var particle = particleCount;
-    self.particles.get(particle, PosX, self.values.pos[0]);
-    self.particles.get(particle, PosY, self.values.pos[1]);
-    self.particles.get(particle, PosZ, self.values.pos[2]);
-    self.particles.get(particle, TimeToLive, self.values.ttl);
+    self.particles.set(particle, p.posX, self.values.pos[0]);
+    self.particles.set(particle, p.posY, self.values.pos[1]);
+    self.particles.set(particle, p.posZ, self.values.pos[2]);
+    self.particles.set(particle, p.vX, 0);
+    self.particles.set(particle, p.vY, 0);
+    self.particles.set(particle, p.vZ, 0);
+    self.particles.set(particle, p.ttl, self.values.ttl);
     self.getFunction(particle);
     particleCount++;
   }
+
+	this.createParticles = function(amount) {
+		for(var i = 0; i < amount; i++) {
+			if(particleCount <= maxParticles) {
+				break;
+			}
+			createParticle();
+		}
+		return this;
+	}
 
   var timeSinceLastParticle = 0;
   var particleCount = 0;
@@ -95,7 +131,6 @@ function Emitter(maxParticles = 500) {
   self.tick = function() {
     //if(timeSinceLastParticle < this.values.growth && particleCount < maxParticles) {
     if(particleCount < maxParticles) {
-      console.log("create particle");
       createParticle();
       timeSinceLastParticle = new Date().getTime();
     }
@@ -107,20 +142,29 @@ function Emitter(maxParticles = 500) {
 
   self.getFunction = function() {
     return function(particle) {
-      var velocity = self.particles.get(particle, Velocity) + self.values.acceleration(particle);
-      self.particles.get(particle, Velocity, velocity);
+			var v = [
+				self.particles.get(particle, p.vX),
+				self.particles.get(particle, p.vY),
+				self.particles.get(particle, p.vZ)
+			];
+			console.log("velocity: " + v.reduce((a,b) => a + ', ' + b), '');
+			var acc = self.particles.get(particle, p.acc);
 
-      var posX = self.particles.get(particle, PosX);
-      self.particles.get(particle, PosX, posX + velocity);
+      self.particles.set(particle, p.vX, v[0] + acc);
+      self.particles.set(particle, p.vY, v[1] + acc);
+      self.particles.set(particle, p.vZ, v[2] + acc);
 
-      var posY = self.particles.get(particle, PosY);
-      self.particles.get(particle, PosY, posY + velocity);
+      var posX = self.particles.get(particle, p.posX);
+      self.particles.set(particle, p.posX, posX + v[0]);
 
-      var posZ = self.particles.get(particle, PosZ);
-      self.particles.get(particle, PosZ, posZ + velocity);
+      var posY = self.particles.get(particle, p.posY);
+      self.particles.set(particle, p.posY, posY + v[1]);
 
-      var ttl = self.particles.get(particle, TimeToLive);
-      self.particles.get(particle, TimeToLive, ttl - 1);
+      var posZ = self.particles.get(particle, p.posZ);
+      self.particles.set(particle, p.posZ, posZ + v[2]);
+
+      var ttl = self.particles.get(particle, p.ttl);
+      self.particles.set(particle, p.ttl, p.ttl - 1);
     }
 	}
 }
