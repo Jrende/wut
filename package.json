@@ -21,6 +21,8 @@
     "gulp-webserver": "latest",
     "gulp-mocha": "latest",
     "mocha": "latest",
+    "babel": "latest",
+		"should": "latest",
     "path": "latest",
     "to-fast-properties": "^1.0.1",
     "vinyl-buffer": "latest",
@@ -31,6 +33,9 @@
       "babelify"
     ]
   },
+	"scripts": {
+		"test": "mocha --compilers js:babel/register"
+	},
   "engines": {
     "node": ">=0.10.0"
   }
