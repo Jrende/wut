@@ -23,10 +23,10 @@ Promise.all(["test"].map(Shader.createShader)).then((shaders) => {
      0, 2, 3],
     [2]);
   s.use();
-  s.r = 0.0;
-  s.g = 0.5;
-  s.b = 1.0;
-  s.alpha = 1.0;
+  s.uniforms.r = 0.0;
+  s.uniforms.g = 0.5;
+  s.uniforms.b = 1.0;
+  s.uniforms.alpha = 1.0;
   gl.clear(gl.COLOR_BUFFER_BIT);
   vertexArray.bind();
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);

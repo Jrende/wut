@@ -82,19 +82,20 @@ function Shader(name, vertData, fragData) {
   this.use = function() {
     gl.useProgram(this.object);
   }
-  this.uniformType = {};
-  var uniforms = [];
-  vertData.uniforms.forEach((u) => uniforms.push(u));
-  fragData.uniforms.forEach((u) => uniforms.push(u));
-  for(var i = 0; i < uniforms.length; i++) {
-    var parts = uniforms[i].split(" ");
+  this.uniforms = {}
+  this.uniformTypes = {};
+  var uniformNames = [];
+  vertData.uniforms.forEach((u) => uniformNames.push(u));
+  fragData.uniforms.forEach((u) => uniformNames.push(u));
+  for(var i = 0; i < uniformNames.length; i++) {
+    var parts = uniformNames[i].split(" ");
 
     var name = parts[2].substring(0, parts[2].length - 1);
     var type = parts[1];
     var uniform = gl.getUniformLocation(this.object, name);
 
-    this.uniformType[name] = type;
-    Object.defineProperty(this, name, {
+    this.uniformTypes[name] = type;
+    Object.defineProperty(this.uniforms, name, {
       enumerable: true,
       configurable: false,
       get: getUniformGetter(uniform),
