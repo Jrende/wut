@@ -141,10 +141,10 @@ Shader.createShader = function(name) {
         })
       }, Promise.resolve())
       .then(function(e) {
-        var vert = shaders["x-shader/x-vertex"]
-        var frag = shaders["x-shader/x-fragment"]
+        var vert = shaders["x-shader/x-vertex"];
+        var frag = shaders["x-shader/x-fragment"];
         var shader = new Shader(name, vert, frag);
-      resolve(shader)
+        resolve(shader);
       });
   });
 }
