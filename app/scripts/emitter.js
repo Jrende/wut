@@ -45,7 +45,7 @@ function Emitter(maxParticles = 500) {
     self.particles.set(particle, attrs.posZ, self.values.pos[2]);
     self.particles.set(particle, attrs.speed, self.values.speed(particle));
 
-    var spread = self.values.spread() * (Math.PI/180.0);
+    var spread = self.values.spread(particle) * (Math.PI/180.0);
     var dir = util.normalize([
       Math.sin(spread),
       Math.cos(spread),
@@ -119,6 +119,11 @@ function Emitter(maxParticles = 500) {
     return self;
   }
 
+  self.func = function(func){
+    self.values.userFunction = toFunction(func);
+    return self;
+  }
+
   self.tick = function() {
     if((new Date().getTime() - timeSinceLastParticle) > this.values.growth && particleCount < maxParticles) {
       console.log("create");
@@ -157,6 +162,10 @@ function Emitter(maxParticles = 500) {
 
       var ttl = self.particles.get(particle, attrs.ttl);
       self.particles.set(particle, attrs.ttl, attrs.ttl - 1);
+
+      if(self.values.userFunction != null) {
+        self.values.userFunction(self.particles.subarray(particle * particleSize, (particle + 1) * particleSize))
+      }
     }
   }
   }
