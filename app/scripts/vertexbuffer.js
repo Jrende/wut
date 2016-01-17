@@ -29,7 +29,7 @@ function VertexArray(vertexData, indexData, attrs) {
       gl.enableVertexAttribArray(i);
       pointer += attrs[i];
     }
-  }
+  };
 
   this.unbind = function() {
     for(var i = 0; i < this.attrs.length; i++) {
@@ -37,7 +37,7 @@ function VertexArray(vertexData, indexData, attrs) {
     }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
-  }
+  };
 
 }
 module.exports = VertexArray;

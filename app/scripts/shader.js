@@ -3,36 +3,36 @@ var gl = require('./gl.js').gl;
 function getShaderSource(path) {
   var p = new Promise(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", path);
+    xhr.open('GET', path);
     xhr.onload = function() {
       if(this.status === 200) {
         var parser = new DOMParser();
-        var elm = parser.parseFromString(this.responseText, "application/xml").firstChild;
+        var elm = parser.parseFromString(this.responseText, 'application/xml').firstChild;
         var result = {
           name: path,
-          type: elm.getAttribute("type"),
+          type: elm.getAttribute('type'),
           src: elm.textContent
-        }
+        };
         resolve(result);
       } else {
-        reject(this.statusText)
+        reject(this.statusText);
       }
-      }
-    xhr.setRequestHeader("accepts", "application/xml")
+    };
+    xhr.setRequestHeader('accepts', 'application/xml');
     xhr.send();
   });
   return p;
 }
 
 function getShaderSources(name) {
-  return Promise.all([getShaderSource("glsl/" + name + ".frag"), getShaderSource("glsl/" + name + ".vert")]);
+  return Promise.all([getShaderSource('glsl/' + name + '.frag'), getShaderSource('glsl/' + name + '.vert')]);
 }
 
 function compileShader(src, typeStr) {
   var type = null;
-  if(typeStr === "x-shader/x-vertex") {
+  if(typeStr === 'x-shader/x-vertex') {
     type = gl.VERTEX_SHADER;
-  } else if(typeStr === "x-shader/x-fragment") {
+  } else if(typeStr === 'x-shader/x-fragment') {
     type = gl.FRAGMENT_SHADER;
   } else {
     return null;
@@ -54,24 +54,24 @@ function createShaderProgram(vertexShader, fragmentShader) {
   gl.attachShader(shaderProgram, fragmentShader);
   gl.linkProgram(shaderProgram);
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    console.err("Could not initialise shaders");
+    console.err('Could not initialise shaders');
   }
   gl.useProgram(shaderProgram);
-  var loc = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  var loc = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
   gl.enableVertexAttribArray(loc);
   return shaderProgram;
 }
 
 function setUniform(uniform, value, type) {
-  if(typeof value === "number") {
+  if(typeof value === 'number') {
     gl.uniform1f(uniform, value);
   } else {
     switch(type) {
-      case "vec2": gl.uniform2fv(uniform, value); break;
-      case "vec3": gl.uniform3fv(uniform, value); break;
-      case "vec4": gl.uniform4fv(uniform, value); break;
-      case "mat3": gl.uniformMatrix3fv(uniform, false, value); break;
-      case "mat4": gl.uniformMatrix4fv(uniform, false, value); break;
+      case 'vec2': gl.uniform2fv(uniform, value); break;
+      case 'vec3': gl.uniform3fv(uniform, value); break;
+      case 'vec4': gl.uniform4fv(uniform, value); break;
+      case 'mat3': gl.uniformMatrix3fv(uniform, false, value); break;
+      case 'mat4': gl.uniformMatrix4fv(uniform, false, value); break;
     }
   }
 }
@@ -81,13 +81,13 @@ function Shader(name, vertData, fragData) {
   this.object = createShaderProgram(vertData.program, fragData.program);
   this.use = function() {
     gl.useProgram(this.object);
-  }
-  this.uniforms = {}
+  };
+  this.uniforms = {};
   var uniformNames = [];
   vertData.uniforms.forEach((u) => uniformNames.push(u));
   fragData.uniforms.forEach((u) => uniformNames.push(u));
   for(var i = 0; i < uniformNames.length; i++) {
-    var parts = uniformNames[i].split(" ");
+    var parts = uniformNames[i].split(' ');
 
     var name = parts[2].substring(0, parts[2].length - 1);
     var type = parts[1];
@@ -105,26 +105,26 @@ function Shader(name, vertData, fragData) {
 function getUniformGetter(uniform) {
   return function() {
     return uniform;
-  }
+  };
 }
 
 function getUniformSetter(uniform, type) {
   return function(newValue) {
     setUniform(uniform, newValue, type);
-  }
+  };
 }
 
 Shader.createShader = function(name) {
   return new Promise(function(resolve, reject) {
     var shaders = [];
-    var promise = ["glsl/" + name + ".frag", "glsl/" + name + ".vert"]
+    var promise = ['glsl/' + name + '.frag', 'glsl/' + name + '.vert']
       .map(getShaderSource)
       .reduce(function(sequence, promise) {
         return sequence.then(function() {
           return promise;
         })
         .then(function(shaderSrc) {
-          //console.log("create program " + name + " of type " + shaderSrc.type);
+          //console.log('create program ' + name + ' of type ' + shaderSrc.type);
           var program = compileShader(shaderSrc.src, shaderSrc.type);
           if(program == null) {
             //Which promise actually gets rejected?
@@ -137,17 +137,16 @@ Shader.createShader = function(name) {
             program: program,
             src: shaderSrc.src,
             uniforms: uniforms
-          }
-        })
+          };
+        });
       }, Promise.resolve())
       .then(function(e) {
-        var vert = shaders["x-shader/x-vertex"];
-        var frag = shaders["x-shader/x-fragment"];
+        var vert = shaders['x-shader/x-vertex'];
+        var frag = shaders['x-shader/x-fragment'];
         var shader = new Shader(name, vert, frag);
         resolve(shader);
       });
   });
-}
-
+};
 
 module.exports = Shader;

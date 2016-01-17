@@ -4,15 +4,15 @@ module.exports = {
     switch(vec.length) {
       case 2:
         return [
-          vec[0]/len,
-          vec[1]/len
-        ]
+          vec[0] / len,
+          vec[1] / len
+        ];
       case 3:
         return [
-          vec[0]/len,
-          vec[1]/len,
-          vec[2]/len
-        ]
+          vec[0] / len,
+          vec[1] / len,
+          vec[2] / len
+        ];
     }
   },
 
@@ -29,4 +29,4 @@ module.exports = {
             vec[2] * vec[2]);
     }
   }
-}
+};

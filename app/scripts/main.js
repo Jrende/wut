@@ -1,14 +1,16 @@
 var context = require('./gl.js');
-context(document.querySelector("#canvas"));
+context(document.querySelector('#canvas'));
 var gl = context.gl;
-var Shader = require('./shader.js')
+var Shader = require('./shader.js');
 var VertexArray = require('./vertexbuffer.js');
 var Emitter = require('./emitter.js');
 var Renderer = require('./renderer.js');
-var emitter = new Emitter(5).spread(45).acceleration(0.0).speed(0.001).pos([0, 0, 0]);
+var emitter = new Emitter(5000).growth(250).spread((i) => {
+  return i * 79;
+}).acceleration(0.00002).speed(0.000);
 window.emitter = emitter;
 
-Promise.all(["test", "particleShader"].map(Shader.createShader)).then((shaders) => {
+Promise.all(['test', 'particleShader'].map(Shader.createShader)).then((shaders) => {
   var s = shaders[0];
   var vertexArray = new VertexArray(
     [1.0, 1.0,
