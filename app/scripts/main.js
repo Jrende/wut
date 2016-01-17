@@ -3,7 +3,7 @@ context(document.querySelector('#canvas'));
 var gl = context.gl;
 var Shader = require('./shader.js');
 var VertexArray = require('./vertexbuffer.js');
-var Emitter = require('./emitter.js');
+import Emitter from './emitter.js';
 var Renderer = require('./renderer.js');
 var emitter = new Emitter(5000).growth(250).spread((i) => {
   return i * 79;
@@ -35,7 +35,7 @@ Promise.all(['test', 'particleShader'].map(Shader.createShader)).then((shaders) 
     vertexArray.bind();
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
-    Renderer.renderParticles(emitter.particles, shaders[1]);
+    Renderer.renderParticles(emitter.getValues(), shaders[1]);
     window.requestAnimationFrame(draw);
   }
   draw();

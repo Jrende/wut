@@ -5,7 +5,7 @@ function toFunction(value) {
 
 //particle is an id (long), backed by values in an Float32Array
 
-var attrs = {
+const attrs = {
   posX: 0,
   posY: 1,
   posZ: 2,
@@ -16,157 +16,166 @@ var attrs = {
   ttl: 7
 };
 
-function Emitter(maxParticles = 500) {
+const particleSize = 8;
 
-  //Number of attributes
-  var particleSize = 8;
-  var _this = this;
+class ParticleArray {
+  constructor(maxParticles) {
+    this.maxParticles = maxParticles;
+    this.particles = new Float32Array(this.maxParticles * particleSize);
+  }
 
-  _this.particles = new Float32Array(maxParticles * particleSize);
   /**
    * Set a particle value
    * @param {number} particle - Index of particle to be set
    * @param {number} attribute - Attribute index
    * @param {!number} value - The value to set
    */
-  _this.particles.set = function(particle, attribute, value) {
-    _this.particles[particleSize * particle + attribute] = value;
-  };
+  set(particle, attribute, value) {
+    this.particles[particleSize * particle + attribute] = value;
+  }
 
-  _this.particles.get = function(particle, attribute) {
-    return _this.particles[particleSize * particle + attribute];
-  };
+  get(particle, attribute) {
+    return this.particles[particleSize * particle + attribute];
+  }
+}
 
-  var createParticle = function() {
+export default class Emitter {
+  constructor(maxParticles = 500) {
+    //Number of attributes
+
+    this.timeSinceLastParticle = 0;
+    this.particleCount = 0;
+    this.maxParticles = maxParticles;
+    this.particles = new ParticleArray(maxParticles);
+    this.values = {
+      pos: [0, 0, 0],
+      growth: 500,
+      spread: () => Math.random() * 360,
+      acceleration: () => 1,
+      speed: () => 0,
+      size: 1,
+      ttl: 100
+    };
+  }
+
+  createParticle() {
     //Sort particles by ttl
-    var particle = particleCount;
-    _this.particles.set(particle, attrs.posX, _this.values.pos[0]);
-    _this.particles.set(particle, attrs.posY, _this.values.pos[1]);
-    _this.particles.set(particle, attrs.posZ, _this.values.pos[2]);
-    _this.particles.set(particle, attrs.speed, _this.values.speed(particle));
+    var particle = this.particleCount;
+    this.particles.set(particle, attrs.posX, this.values.pos[0]);
+    this.particles.set(particle, attrs.posY, this.values.pos[1]);
+    this.particles.set(particle, attrs.posZ, this.values.pos[2]);
+    this.particles.set(particle, attrs.speed, this.values.speed(particle));
 
-    var spread = _this.values.spread(particle) * (Math.PI / 180.0);
+    var spread = this.values.spread(particle) * (Math.PI / 180.0);
     var dir = util.normalize([
       Math.sin(spread),
       Math.cos(spread),
       0
     ]);
 
-    _this.particles.set(particle, attrs.dirX, dir[0]);
-    _this.particles.set(particle, attrs.dirY, dir[1]);
-    _this.particles.set(particle, attrs.dirZ, dir[2]);
-    _this.particles.set(particle, attrs.ttl, _this.values.ttl);
-    _this.getFunction(particle);
-    particleCount++;
-  };
+    this.particles.set(particle, attrs.dirX, dir[0]);
+    this.particles.set(particle, attrs.dirY, dir[1]);
+    this.particles.set(particle, attrs.dirZ, dir[2]);
+    this.particles.set(particle, attrs.ttl, this.values.ttl);
+    this.particleCount++;
+  }
 
-  this.createParticles = function(amount) {
+  createParticles(amount) {
     for(var i = 0; i < amount; i++) {
-      if(particleCount <= maxParticles) {
+      if(this.particleCount <= maxParticles) {
         break;
       }
-      createParticle();
+      this.createParticle();
     }
     return this;
-  };
-
-  var timeSinceLastParticle = 0;
-  var particleCount = 0;
+  }
 
   //Default values
-  _this.values = {
-    pos: [0, 0, 0],
-    growth: 500,
-    spread: () => Math.random() * 360,
-    acceleration: () => 1,
-    speed: () => 0,
-    size: 1,
-    ttl: 100
-  };
+  pos(pos) {
+    this.values.pos = pos;
+    return this;
+  }
 
-  _this.pos = function(pos) {
-    _this.values.pos = pos;
-    return _this;
-  };
+  spread(spread) {
+    this.values.spread = toFunction(spread);
+    return this;
+  }
 
-  _this.spread = function(spread) {
-    _this.values.spread = toFunction(spread);
-    return _this;
-  };
+  acceleration(acceleration) {
+    this.values.acceleration = toFunction(acceleration);
+    return this;
+  }
 
-  _this.acceleration = function(acceleration) {
-    _this.values.acceleration = toFunction(acceleration);
-    return _this;
-  };
+  growth(growth) {
+    this.values.growth = growth;
+    return this;
+  }
 
-  _this.growth = function(growth) {
-    _this.values.growth = growth;
-    return _this;
-  };
+  size(size) {
+    this.values.size = size;
+    return this;
+  }
 
-  _this.size = function(size) {
-    _this.values.size = size;
-    return _this;
-  };
+  timeToLive(ttl) {
+    this.values.ttl = toFunction(ttl);
+    return this;
+  }
 
-  _this.timeToLive = function(ttl) {
-    _this.values.ttl = toFunction(ttl);
-    return _this;
-  };
+  speed(speed) {
+    this.values.speed = toFunction(speed);
+    return this;
+  }
 
-  _this.speed = function(speed) {
-    _this.values.speed = toFunction(speed);
-    return _this;
-  };
+  func(func) {
+    this.values.userFunction = toFunction(func);
+    return this;
+  }
 
-  _this.func = function(func) {
-    _this.values.userFunction = toFunction(func);
-    return _this;
-  };
-
-  _this.tick = function() {
-    if((new Date().getTime() - timeSinceLastParticle) > this.values.growth && particleCount < maxParticles) {
-      createParticle();
-      timeSinceLastParticle = new Date().getTime();
+  tick() {
+    if((new Date().getTime() - this.timeSinceLastParticle) > this.values.growth && this.particleCount < this.maxParticles) {
+      this.createParticle();
+      this.timeSinceLastParticle = new Date().getTime();
     }
-    var fun = _this.getFunction();
-    for(var i = 0; i < particleCount; i++) {
+    var fun = this.getFunction();
+    for(var i = 0; i < this.particleCount; i++) {
       fun(i);
     }
-  };
+  }
 
-  _this.getFunction = function() {
-    return function(particle) {
+  getFunction() {
+    return (particle) => {
       var dir = [
-        _this.particles.get(particle, attrs.dirX),
-        _this.particles.get(particle, attrs.dirY),
-        _this.particles.get(particle, attrs.dirZ)
+        this.particles.get(particle, attrs.dirX),
+        this.particles.get(particle, attrs.dirY),
+        this.particles.get(particle, attrs.dirZ)
       ];
       var pos = [
-        _this.particles.get(particle, attrs.posX),
-        _this.particles.get(particle, attrs.posY),
-        _this.particles.get(particle, attrs.posZ)
+        this.particles.get(particle, attrs.posX),
+        this.particles.get(particle, attrs.posY),
+        this.particles.get(particle, attrs.posZ)
       ];
-      var speed = _this.particles.get(particle, attrs.speed);
+      var speed = this.particles.get(particle, attrs.speed);
 
       pos[0] = pos[0] + dir[0] * speed;
       pos[1] = pos[1] + dir[1] * speed;
       pos[2] = pos[2] + dir[2] * speed;
 
-      _this.particles.set(particle, attrs.speed, speed + _this.values.acceleration(particle));
+      this.particles.set(particle, attrs.speed, speed + this.values.acceleration(particle));
 
-      _this.particles.set(particle, attrs.posX, pos[0]);
-      _this.particles.set(particle, attrs.posY, pos[1]);
-      _this.particles.set(particle, attrs.posZ, pos[2]);
+      this.particles.set(particle, attrs.posX, pos[0]);
+      this.particles.set(particle, attrs.posY, pos[1]);
+      this.particles.set(particle, attrs.posZ, pos[2]);
 
-      var ttl = _this.particles.get(particle, attrs.ttl);
-      _this.particles.set(particle, attrs.ttl, attrs.ttl - 1);
+      var ttl = this.particles.get(particle, attrs.ttl);
+      this.particles.set(particle, attrs.ttl, attrs.ttl - 1);
 
-      if(_this.values.userFunction != null) {
-        _this.values.userFunction(_this.particles.subarray(particle * particleSize, (particle + 1) * particleSize));
+      if(this.values.userFunction != null) {
+        this.values.userFunction(this.particles.subarray(particle * particleSize, (particle + 1) * particleSize));
       }
     };
-  };
-}
+  }
 
-module.exports = Emitter;
+  getValues() {
+    return this.particles.particles;
+  }
+}
