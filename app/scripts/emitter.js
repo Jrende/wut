@@ -1,9 +1,10 @@
-var util = require('./utils.js');
+import util from './utils';
+
 function toFunction(value) {
-  return value instanceof Function ? value : function(i) {return value;};
+  return value instanceof Function ? value : () => value;
 }
 
-//particle is an id (long), backed by values in an Float32Array
+// particle is an id (long), backed by values in an Float32Array
 
 const attrs = {
   posX: 0,
@@ -41,7 +42,7 @@ class ParticleArray {
 
 export default class Emitter {
   constructor(maxParticles = 500) {
-    //Number of attributes
+    // Number of attributes
 
     this.timeSinceLastParticle = 0;
     this.particleCount = 0;
@@ -59,15 +60,15 @@ export default class Emitter {
   }
 
   createParticle() {
-    //Sort particles by ttl
-    var particle = this.particleCount;
+    // Sort particles by ttl
+    const particle = this.particleCount;
     this.particles.set(particle, attrs.posX, this.values.pos[0]);
     this.particles.set(particle, attrs.posY, this.values.pos[1]);
     this.particles.set(particle, attrs.posZ, this.values.pos[2]);
     this.particles.set(particle, attrs.speed, this.values.speed(particle));
 
-    var spread = this.values.spread(particle) * (Math.PI / 180.0);
-    var dir = util.normalize([
+    const spread = this.values.spread(particle) * (Math.PI / 180.0);
+    const dir = util.normalize([
       Math.sin(spread),
       Math.cos(spread),
       0
@@ -81,8 +82,8 @@ export default class Emitter {
   }
 
   createParticles(amount) {
-    for(var i = 0; i < amount; i++) {
-      if(this.particleCount <= maxParticles) {
+    for(let i = 0; i < amount; i++) {
+      if(this.particleCount <= this.maxParticles) {
         break;
       }
       this.createParticle();
@@ -90,7 +91,7 @@ export default class Emitter {
     return this;
   }
 
-  //Default values
+  // Default values
   pos(pos) {
     this.values.pos = pos;
     return this;
@@ -132,29 +133,30 @@ export default class Emitter {
   }
 
   tick() {
-    if((new Date().getTime() - this.timeSinceLastParticle) > this.values.growth && this.particleCount < this.maxParticles) {
+    if((new Date().getTime() - this.timeSinceLastParticle) > this.values.growth &&
+       this.particleCount < this.maxParticles) {
       this.createParticle();
       this.timeSinceLastParticle = new Date().getTime();
     }
-    var fun = this.getFunction();
-    for(var i = 0; i < this.particleCount; i++) {
+    const fun = this.getFunction();
+    for(let i = 0; i < this.particleCount; i++) {
       fun(i);
     }
   }
 
   getFunction() {
     return (particle) => {
-      var dir = [
+      const dir = [
         this.particles.get(particle, attrs.dirX),
         this.particles.get(particle, attrs.dirY),
         this.particles.get(particle, attrs.dirZ)
       ];
-      var pos = [
+      const pos = [
         this.particles.get(particle, attrs.posX),
         this.particles.get(particle, attrs.posY),
         this.particles.get(particle, attrs.posZ)
       ];
-      var speed = this.particles.get(particle, attrs.speed);
+      const speed = this.particles.get(particle, attrs.speed);
 
       pos[0] = pos[0] + dir[0] * speed;
       pos[1] = pos[1] + dir[1] * speed;
@@ -166,11 +168,12 @@ export default class Emitter {
       this.particles.set(particle, attrs.posY, pos[1]);
       this.particles.set(particle, attrs.posZ, pos[2]);
 
-      var ttl = this.particles.get(particle, attrs.ttl);
+      // const ttl = this.particles.get(particle, attrs.ttl);
       this.particles.set(particle, attrs.ttl, attrs.ttl - 1);
 
       if(this.values.userFunction != null) {
-        this.values.userFunction(this.particles.subarray(particle * particleSize, (particle + 1) * particleSize));
+        this.values.userFunction(this.particles.subarray(particle * particleSize,
+                                                         (particle + 1) * particleSize));
       }
     };
   }

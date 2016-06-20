@@ -1,0 +1,12 @@
+{
+    "extends": "airbnb",
+    "rules": {
+      "vars-on-top": "off",
+      "keyword-spacing": "off",
+      "no-console": "off",
+      "comma-dangle": "off",
+      "no-param-reassign": "off"
+    },
+    "plugins": [
+    ]
+}
