@@ -1,18 +1,21 @@
-var VertexArray = require('./vertexbuffer.js');
-var quad = new VertexArray(
-[0.01,  0.01,
--0.01,  0.01,
+import VertexArray from './vertexbuffer.js';
+const quad = new VertexArray(
+[0.01, 0.01,
+-0.01, 0.01,
 -0.01, -0.01,
 0.01, -0.01],
 [0, 1, 2,
 0, 2, 3],
 [2]);
 
-export function renderParticles(particles, particleShader) {
+export function renderParticles(gl, particles, particleShader) {
+  if(!quad.isInitialized) {
+    quad.initialize(gl);
+  }
   particleShader.use();
-  quad.bind();
-  for(var i = 0; i <= particles.length; i += 8) {
-    var pos = [
+  quad.bind(gl);
+  for(let i = 0; i <= particles.length; i += 8) {
+    const pos = [
       particles[i],
       particles[i + 1]
     ];
