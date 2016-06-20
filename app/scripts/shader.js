@@ -1,43 +1,5 @@
-
-function getShaderSource(path) {
-  var p = new Promise(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', path);
-    xhr.onload = function() {
-      if(this.status === 200) {
-        var parser = new DOMParser();
-        var elm = parser.parseFromString(this.responseText, 'application/xml').firstChild;
-        var result = {
-          name: path,
-          type: elm.getAttribute('type'),
-          src: elm.textContent
-        };
-        resolve(result);
-      } else {
-        reject(this.statusText);
-      }
-    };
-    xhr.setRequestHeader('accepts', 'application/xml');
-    xhr.send();
-  });
-  return p;
-}
-
-function getShaderSources(name) {
-  return Promise.all([getShaderSource('glsl/' + name + '.frag'), getShaderSource('glsl/' + name + '.vert')]);
-}
-
-function compileShader(src, typeStr) {
-  var type = null;
-  if(typeStr === 'x-shader/x-vertex') {
-    type = gl.VERTEX_SHADER;
-  } else if(typeStr === 'x-shader/x-fragment') {
-    type = gl.FRAGMENT_SHADER;
-  } else {
-    return null;
-  }
-
-  var shader = gl.createShader(type);
+function compileShader(gl, src, type) {
+  const shader = gl.createShader(type);
   gl.shaderSource(shader, src);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -47,105 +9,90 @@ function compileShader(src, typeStr) {
   return shader;
 }
 
-function createShaderProgram(vertexShader, fragmentShader) {
-  var shaderProgram = gl.createProgram();
+function createShaderProgram(gl, vertexShader, fragmentShader) {
+  const shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
   gl.attachShader(shaderProgram, fragmentShader);
   gl.linkProgram(shaderProgram);
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    console.err('Could not initialise shaders');
+    console.error('Could not initialise shaders');
   }
   gl.useProgram(shaderProgram);
-  var loc = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
+  const loc = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
   gl.enableVertexAttribArray(loc);
   return shaderProgram;
 }
 
-function setUniform(uniform, value, type) {
-  if(typeof value === 'number') {
-    gl.uniform1f(uniform, value);
-  } else {
-    switch(type) {
-      case 'vec2': gl.uniform2fv(uniform, value); break;
-      case 'vec3': gl.uniform3fv(uniform, value); break;
-      case 'vec4': gl.uniform4fv(uniform, value); break;
-      case 'mat3': gl.uniformMatrix3fv(uniform, false, value); break;
-      case 'mat4': gl.uniformMatrix4fv(uniform, false, value); break;
-    }
+function getUniformGetter(gl, uniformHandle, shader) {
+  return () => gl.getActiveUniform(shader.program, uniformHandle);
+}
+
+function getUniformSetter(gl, uniformHandle, type) {
+  switch(type) {
+    case 'float':return value => gl.uniform1f(uniformHandle, value);
+    case 'vec2': return value => gl.uniform2fv(uniformHandle, value);
+    case 'vec3': return value => gl.uniform3fv(uniformHandle, value);
+    case 'vec4': return value => gl.uniform4fv(uniformHandle, value);
+    case 'mat3': return value => gl.uniformMatrix3fv(uniformHandle, false, value);
+    case 'mat4': return value => gl.uniformMatrix4fv(uniformHandle, false, value);
+    default: return undefined;
   }
 }
 
-function Shader(name, vertData, fragData) {
-  this.name = name;
-  this.object = createShaderProgram(vertData.program, fragData.program);
-  this.use = function() {
-    gl.useProgram(this.object);
-  };
-  this.uniforms = {};
-  var uniformNames = [];
-  vertData.uniforms.forEach((u) => uniformNames.push(u));
-  fragData.uniforms.forEach((u) => uniformNames.push(u));
-  for(var i = 0; i < uniformNames.length; i++) {
-    var parts = uniformNames[i].split(' ');
-
-    var name = parts[2].substring(0, parts[2].length - 1);
-    var type = parts[1];
-    var uniform = gl.getUniformLocation(this.object, name);
-
-    Object.defineProperty(this.uniforms, name, {
-      enumerable: true,
-      configurable: false,
-      get: getUniformGetter(uniform),
-      set: getUniformSetter(uniform, type)
-    });
-  }
-}
-
-function getUniformGetter(uniform) {
-  return function() {
-    return uniform;
-  };
-}
-
-function getUniformSetter(uniform, type) {
-  return function(newValue) {
-    setUniform(uniform, newValue, type);
-  };
-}
-
-Shader.createShader = function(name) {
-  return new Promise(function(resolve, reject) {
-    var shaders = [];
-    var promise = ['glsl/' + name + '.frag', 'glsl/' + name + '.vert']
-      .map(getShaderSource)
-      .reduce(function(sequence, promise) {
-        return sequence.then(function() {
-          return promise;
-        })
-        .then(function(shaderSrc) {
-          //console.log('create program ' + name + ' of type ' + shaderSrc.type);
-          var program = compileShader(shaderSrc.src, shaderSrc.type);
-          if(program == null) {
-            //Which promise actually gets rejected?
-            reject();
-            return;
-          }
-          var uniforms = shaderSrc.src.match(/uniform.*/g);
-          if(uniforms == null) uniforms = [];
-          shaders[shaderSrc.type] = {
-            program: program,
-            src: shaderSrc.src,
-            uniforms: uniforms
-          };
+function getUniforms(sources) {
+  const uniforms = [];
+  sources.forEach(source => {
+    const matches = source.match(/uniform.*/g);
+    if(matches) {
+      matches
+        .map(u => u.substring(8, u.length - 1))
+        .map(u => u.split(' '))
+        .forEach(u => {
+          uniforms.push({
+            type: u[0],
+            name: u[1]
+          });
         });
-      }, Promise.resolve())
-      .then(function(e) {
-        var vert = shaders['x-shader/x-vertex'];
-        var frag = shaders['x-shader/x-fragment'];
-        var shader = new Shader(name, vert, frag);
-        resolve(shader);
-      });
+    }
   });
-};
+  return uniforms;
+}
 
-module.exports = Shader;
+function createUniformFunction(gl, name, type, shader) {
+  const uniformHandle = gl.getUniformLocation(shader.program, name);
+  Object.defineProperty(shader.uniforms, name, {
+    enumerable: true,
+    configurable: false,
+    get: getUniformGetter(gl, uniformHandle, type),
+    set: getUniformSetter(gl, uniformHandle, type)
+  });
+}
+
+function createUniforms(gl, shader) {
+  const uniforms = getUniforms([shader.vert, shader.frag]);
+  uniforms.forEach(u => createUniformFunction(gl, u.name, u.type, shader));
+}
+
+export default class Shader {
+  constructor(src) {
+    this.vert = src.vert;
+    this.frag = src.frag;
+    this.program = undefined;
+    this.gl = undefined;
+    this.uniforms = {};
+    this.compiled = false;
+  }
+
+  use() {
+    this.gl.useProgram(this.program);
+  }
+
+  compile(gl) {
+    this.gl = gl;
+    const vertProgram = compileShader(gl, this.vert, gl.VERTEX_SHADER);
+    const fragProgram = compileShader(gl, this.frag, gl.FRAGMENT_SHADER);
+    this.program = createShaderProgram(gl, vertProgram, fragProgram);
+    createUniforms(gl, this);
+    this.compiled = true;
+  }
+}
