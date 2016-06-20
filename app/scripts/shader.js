@@ -1,4 +1,3 @@
-var gl = require('./gl.js').gl;
 
 function getShaderSource(path) {
   var p = new Promise(function(resolve, reject) {

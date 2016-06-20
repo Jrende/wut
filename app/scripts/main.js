@@ -1,13 +1,12 @@
-var context = require('./gl.js');
-context(document.querySelector('#canvas'));
-var gl = context.gl;
-var Shader = require('./shader.js');
-var VertexArray = require('./vertexbuffer.js');
+import './gl.js';
+import Shader from './shader.js';
+import VertexArray from './vertexbuffer.js'
 import Emitter from './emitter.js';
-var Renderer = require('./renderer.js');
+import * as Renderer from './renderer.js';
+console.log("Create context");
 var emitter = new Emitter(5000).growth(250).spread((i) => {
   return i * 79;
-}).acceleration(0.00002).speed(0.000);
+}).acceleration(0.00002).speed(0);
 window.emitter = emitter;
 
 Promise.all(['test', 'particleShader'].map(Shader.createShader)).then((shaders) => {
@@ -28,8 +27,8 @@ Promise.all(['test', 'particleShader'].map(Shader.createShader)).then((shaders) 
     gl.disable(gl.CULL_FACE);
     s.use();
     s.uniforms.r = 0.0;
-    s.uniforms.g = 0.5;
-    s.uniforms.b = 1.0;
+    s.uniforms.g = 0.0;
+    s.uniforms.b = 0.0;
     s.uniforms.alpha = 1.0;
     gl.clear(gl.COLOR_BUFFER_BIT);
     vertexArray.bind();

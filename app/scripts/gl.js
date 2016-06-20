@@ -1,3 +1,4 @@
+
 function throwOnGLError(err, funcName, args) {
   throw WebGLDebugUtils.glEnumToString(err) + ' was caused by call to: ' + funcName;
 }
@@ -19,23 +20,9 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
   }
 }
 
-function createContext(elm, debugMode) {
-  if(debugMode === null) {
-    debugMode = false;
-  }
-
-  var gl = null;
-  if(debugMode) {
-    gl = WebGLDebugUtils.makeDebugContext(elm.getContext('webgl'), throwOnGLError, logAndValidate);
-  } else {
-    gl = elm.getContext('webgl');
-  }
-
-  if(!gl) {
-    console.log('unable to initialize gl');
-  }
-  createContext.gl = gl;
-
-  return gl;
+let elm = document.querySelector('#canvas');
+let gl = elm.getContext('webgl');
+if(!gl) {
+  console.log('unable to initialize gl');
 }
-module.exports = createContext;
+window.gl = gl;

@@ -1,4 +1,3 @@
-var gl = require('./gl.js').gl;
 function VertexArray(vertexData, indexData, attrs) {
   if(vertexData instanceof Array) {
     this.vertexData = new Float32Array(vertexData);
