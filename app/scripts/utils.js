@@ -1,5 +1,17 @@
+export function length(vec) {
+  switch(vec.length) {
+    case 2:
+      return Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
+    case 3:
+      return Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+    default: {
+      return Math.sqrt(vec.reduce((a, b) => a * a + b * b));
+    }
+  }
+}
+
 export function normalize(vec) {
-  const len = this.length(vec);
+  const len = length(vec);
   switch(vec.length) {
     case 2:
       return [
@@ -18,18 +30,6 @@ export function normalize(vec) {
         ret[i] = ret[i] / len;
       }
       return ret;
-    }
-  }
-}
-
-export function length(vec) {
-  switch(vec.length) {
-    case 2:
-      return Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
-    case 3:
-      return Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
-    default: {
-      return Math.sqrt(vec.reduce((a, b) => a * a + b * b));
     }
   }
 }

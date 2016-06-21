@@ -1,4 +1,4 @@
-import util from './utils';
+import { normalize } from './utils';
 
 function toFunction(value) {
   return value instanceof Function ? value : () => value;
@@ -68,7 +68,7 @@ export default class Emitter {
     this.particles.set(particle, attrs.speed, this.values.speed(particle));
 
     const spread = this.values.spread(particle) * (Math.PI / 180.0);
-    const dir = util.normalize([
+    const dir = normalize([
       Math.sin(spread),
       Math.cos(spread),
       0
