@@ -35,12 +35,16 @@ function getUniformSetter(gl, uniformHandle, type) {
     case 'vec4': return value => gl.uniform4fv(uniformHandle, value);
     case 'mat3': return value => gl.uniformMatrix3fv(uniformHandle, false, value);
     case 'mat4': return value => gl.uniformMatrix4fv(uniformHandle, false, value);
-    default: return undefined;
+    case 'sampler2D': return value => gl.uniform1i(uniformHandle, value);
+    default: {
+      console.error('Unable to create uniform setter for type', type);
+      return undefined;
+    }
   }
 }
 
 function getUniforms(sources) {
-  const uniforms = [];
+  const uniforms = {};
   sources.forEach(source => {
     const matches = source.match(/uniform.*/g);
     if(matches) {
@@ -48,10 +52,7 @@ function getUniforms(sources) {
         .map(u => u.substring(8, u.length - 1))
         .map(u => u.split(' '))
         .forEach(u => {
-          uniforms.push({
-            type: u[0],
-            name: u[1]
-          });
+          uniforms[u[1]] = u[0];
         });
     }
   });
@@ -70,7 +71,8 @@ function createUniformFunction(gl, name, type, shader) {
 
 function createUniforms(gl, shader) {
   const uniforms = getUniforms([shader.vert, shader.frag]);
-  uniforms.forEach(u => createUniformFunction(gl, u.name, u.type, shader));
+  Object.entries(uniforms)
+    .forEach(u => createUniformFunction(gl, u[0], u[1], shader));
 }
 
 export default class Shader {
@@ -78,21 +80,27 @@ export default class Shader {
     this.vert = src.vert;
     this.frag = src.frag;
     this.program = undefined;
-    this.gl = undefined;
     this.uniforms = {};
     this.compiled = false;
   }
 
-  use() {
-    this.gl.useProgram(this.program);
+  bind(gl) {
+    if(this.compiled !== true) {
+      console.error('Tried to use uncompiled Shader!');
+      return;
+    }
+    gl.useProgram(this.program);
   }
 
   compile(gl) {
-    this.gl = gl;
     const vertProgram = compileShader(gl, this.vert, gl.VERTEX_SHADER);
     const fragProgram = compileShader(gl, this.frag, gl.FRAGMENT_SHADER);
     this.program = createShaderProgram(gl, vertProgram, fragProgram);
     createUniforms(gl, this);
     this.compiled = true;
+  }
+
+  unbind(gl) {
+    gl.useProgram(null);
   }
 }

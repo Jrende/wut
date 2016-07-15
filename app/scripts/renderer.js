@@ -12,7 +12,7 @@ export function renderParticles(gl, particles, particleShader) {
   if(!quad.isInitialized) {
     quad.initialize(gl);
   }
-  particleShader.use();
+  particleShader.bind(gl);
   quad.bind(gl);
   for(let i = 0; i <= particles.length; i += 8) {
     const pos = [

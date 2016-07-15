@@ -1,3 +1,7 @@
+export function nextPowOf2(x) {
+  return Math.pow(2, Math.ceil(Math.log(x) / Math.log(2)));
+}
+
 export function length(vec) {
   switch(vec.length) {
     case 2:

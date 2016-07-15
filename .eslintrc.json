@@ -5,7 +5,8 @@
       "keyword-spacing": "off",
       "no-console": "off",
       "comma-dangle": "off",
-      "no-param-reassign": "off"
+      "no-param-reassign": "off",
+      "spaced-comment": "off"
     },
     "plugins": [
     ]

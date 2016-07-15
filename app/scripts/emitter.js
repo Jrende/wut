@@ -17,7 +17,7 @@ const attrs = {
   ttl: 7
 };
 
-const particleSize = 8;
+const particleSize = Object.keys(attrs).length;
 
 class ParticleArray {
   constructor(maxParticles) {

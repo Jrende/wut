@@ -2,8 +2,10 @@ import otherFrag from './other.frag';
 import otherVert from './other.vert';
 import particleShaderFrag from './particleShader.frag';
 import particleShaderVert from './particleShader.vert';
-import testFrag from './test.frag';
-import testVert from './test.vert';
+import solidFrag from './solid.frag';
+import solidVert from './solid.vert';
+import textureFrag from './textureShader.frag';
+import textureVert from './textureShader.vert';
 
 export default {
   other: {
@@ -14,8 +16,12 @@ export default {
     frag: particleShaderFrag,
     vert: particleShaderVert
   },
-  test: {
-    frag: testFrag,
-    vert: testVert
+  solid: {
+    frag: solidFrag,
+    vert: solidVert
+  },
+  texture: {
+    frag: textureFrag,
+    vert: textureVert
   }
 };

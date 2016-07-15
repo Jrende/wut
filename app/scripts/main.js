@@ -1,50 +1,53 @@
-import './gl.js';
-import Shader from './shader.js';
+import './gl';
+import Shader from './shader';
 import shaderSources from '../glsl';
-import VertexArray from './vertexbuffer.js';
-import Emitter from './emitter.js';
-import * as Renderer from './renderer.js';
+import VertexArray from './vertexbuffer';
+import ParticleComputeShader from './ParticleComputeShader';
+//import Texture from './texture';
 
-const emitter = new Emitter(5000)
-  .growth(250)
-  .spread((i) => i * 79)
-  .acceleration(0.00002)
-  .speed(0);
+const elm = document.querySelector('#canvas');
+const gl = elm.getContext('webgl');
 
+const textureShader = new Shader(shaderSources.texture);
+textureShader.compile(gl);
 
-const gl = document.querySelector('#canvas').getContext('webgl');
+const particleComputeShader = new ParticleComputeShader(elm.width, elm.height);
+particleComputeShader.compile(gl);
+//particleComputeShader.compute(gl);
 
-const particleShader = new Shader(shaderSources.particle);
-particleShader.compile(gl);
-
-const testShader = new Shader(shaderSources.test);
-testShader.compile(gl);
+const flatshader = new Shader(shaderSources.solid);
+flatshader.compile(gl);
 
 const vertexArray = new VertexArray(
-  [1.0, 1.0,
-  -1.0, 1.0,
-  -1.0, -1.0,
-  1.0, -1.0],
-  [0, 1, 2,
-   0, 2, 3],
-  [2]);
+  [
+    1.0, 1.0, 1.0, 1.0,
+    -1.0, 1.0, 0, 1.0,
+    -1.0, -1.0, 0, 0,
+    1.0, -1.0, 1.0, 0
+  ],
+  [0, 1, 2, 0, 2, 3],
+  [2, 2]);
 vertexArray.initialize(gl);
+//const texture = new Texture('dist/image.png');
+//texture.compile(gl);
 
+gl.clearColor(0, 1, 0, 1);
 function draw() {
-  emitter.tick();
+  particleComputeShader.compute(gl);
 
-  gl.clearColor(0, 0, 0, 1);
   gl.disable(gl.CULL_FACE);
-  testShader.use();
-  testShader.uniforms.r = 0.0;
-  testShader.uniforms.g = 0.2;
-  testShader.uniforms.b = 0.1;
-  testShader.uniforms.alpha = 1.0;
   gl.clear(gl.COLOR_BUFFER_BIT);
+
+  textureShader.bind(gl);
+  //texture.bind(gl, 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, particleComputeShader.frontbuffer.texture);
+  textureShader.uniforms.sampler = 0;
+
   vertexArray.bind(gl);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
-  Renderer.renderParticles(gl, emitter.getValues(), particleShader);
   window.requestAnimationFrame(draw);
 }
+
 draw();

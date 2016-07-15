@@ -26,12 +26,17 @@ export default class VertexArray {
   }
 
   bind(gl) {
+    if(this.isInitialized !== true) {
+      console.error('Tried to use uninitialized VertexArray!');
+      return;
+    }
+    const attrSum = this.attrs.reduce((a, b) => a + b);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertBuf);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuf);
     let pointer = 0;
     for(let i = 0; i < this.attrs.length; i++) {
-      gl.vertexAttribPointer(i, this.attrs[i], gl.FLOAT, false, pointer, 0);
       gl.enableVertexAttribArray(i);
+      gl.vertexAttribPointer(i, this.attrs[i], gl.FLOAT, false, attrSum * 4, pointer * 4);
       pointer += this.attrs[i];
     }
   }
