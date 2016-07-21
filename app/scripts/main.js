@@ -31,7 +31,7 @@ vertexArray.initialize(gl);
 //const texture = new Texture('dist/image.png');
 //texture.compile(gl);
 
-gl.clearColor(0, 1, 0, 1);
+gl.clearColor(1, 1, 1, 1);
 function draw() {
   particleComputeShader.compute(gl);
 
@@ -39,7 +39,6 @@ function draw() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   textureShader.bind(gl);
-  //texture.bind(gl, 0);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, particleComputeShader.frontbuffer.texture);
   textureShader.uniforms.sampler = 0;

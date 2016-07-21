@@ -45,6 +45,10 @@ export default class ParticleComputeShader {
   compile(gl) {
     this.frontbuffer = createFramebuffer(gl, this.width, this.height);
     this.backbuffer = createFramebuffer(gl, this.width, this.height);
+    this.positionShader = new Shader(shaderSources.particlePosition);
+    this.positionShader.compile(gl);
+    this.velocityShader = new Shader(shaderSources.particleVelocity);
+    this.velocityShader = new Shader(shaderSources.particleVelocity);
     this.shader = new Shader(shaderSources.particle);
     this.shader.compile(gl);
     const initShader = new Shader(shaderSources.solid);
@@ -65,7 +69,7 @@ export default class ParticleComputeShader {
 
   initializeFramebuffer(gl, framebuffer) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    gl.clearColor(0, 0, 0, 1);
+    gl.clearColor(0, 1, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
