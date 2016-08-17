@@ -3,7 +3,10 @@ function compileShader(gl, src, type) {
   gl.shaderSource(shader, src);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error(gl.getShaderInfoLog(shader));
+    console.error(`Error when compiling ${name}: ${gl.getShaderInfoLog(shader)}`);
+    console.groupCollapsed('Shader source');
+    console.log(src);
+    console.groupEnd();
     return null;
   }
   return shader;
@@ -75,12 +78,12 @@ function createUniforms(gl, shader) {
     .forEach(u => createUniformFunction(gl, u[0], u[1], shader));
 }
 
-export default class Shader {
+class Shader {
   constructor(src) {
     this.vert = src.vert;
     this.frag = src.frag;
     this.program = undefined;
-    this.uniforms = {};
+    this.uniforms = Object.create(null);
     this.compiled = false;
   }
 
@@ -93,14 +96,27 @@ export default class Shader {
   }
 
   compile(gl) {
-    const vertProgram = compileShader(gl, this.vert, gl.VERTEX_SHADER);
-    const fragProgram = compileShader(gl, this.frag, gl.FRAGMENT_SHADER);
-    this.program = createShaderProgram(gl, vertProgram, fragProgram);
-    createUniforms(gl, this);
-    this.compiled = true;
+    if(!this.compiled) {
+      const vertProgram = compileShader(gl, this.vert, gl.VERTEX_SHADER);
+      const fragProgram = compileShader(gl, this.frag, gl.FRAGMENT_SHADER);
+      this.program = createShaderProgram(gl, vertProgram, fragProgram);
+      createUniforms(gl, this);
+      this.compiled = true;
+    }
   }
 
   unbind(gl) {
     gl.useProgram(null);
   }
+}
+
+const shaderCache = new Map();
+export default function createShader(src) {
+  const key = src.vert + src.frag;
+  if(!shaderCache.get(key)) {
+    const shader = new Shader(src);
+    shaderCache.set(key, shader);
+    return shader;
+  }
+  return shaderCache.get(key);
 }

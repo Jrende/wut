@@ -3,9 +3,8 @@
   "version": "0.0.0",
   "dependencies": {},
   "babel": {
-    "presets": [
-      "es2015"
-    ]
+    "presets": [ "es2017" ],
+    "plugins": ["transform-runtime"]
   },
   "eslintConfig": {
     "parserOptions": {
@@ -30,6 +29,7 @@
     "webpack": "^1.13.1"
   },
   "scripts": {
-    "test": "mocha --compilers js:babel/register"
+    "test": "mocha --compilers js:babel/register",
+    "start": "webpack-dev-server"
   }
 }

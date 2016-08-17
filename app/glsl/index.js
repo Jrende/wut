@@ -1,20 +1,24 @@
-import otherFrag from './other.frag';
-import otherVert from './other.vert';
-import particleShaderFrag from './particleShader.frag';
-import particleShaderVert from './particleShader.vert';
+import particleVelocityFrag from './particleVelocity.frag';
+import particleVelocityVert from './particleVelocity.vert';
+import particleRendererFrag from './particleRenderer.frag';
+import particleRendererVert from './particleRenderer.vert';
+import particlePositionFrag from './particlePosition.frag';
+import particlePositionVert from './particlePosition.vert';
 import solidFrag from './solid.frag';
 import solidVert from './solid.vert';
 import textureFrag from './textureShader.frag';
 import textureVert from './textureShader.vert';
+import randomFrag from './random.frag';
+import randomVert from './random.vert';
 
 export default {
-  other: {
-    frag: otherFrag,
-    vert: otherVert
+  particlePosition: {
+    frag: particlePositionFrag,
+    vert: particlePositionVert
   },
-  particle: {
-    frag: particleShaderFrag,
-    vert: particleShaderVert
+  particleVelocity: {
+    frag: particleVelocityFrag,
+    vert: particleVelocityVert
   },
   solid: {
     frag: solidFrag,
@@ -23,5 +27,13 @@ export default {
   texture: {
     frag: textureFrag,
     vert: textureVert
+  },
+  particleRenderer: {
+    frag: particleRendererFrag,
+    vert: particleRendererVert
+  },
+  random: {
+    frag: randomFrag,
+    vert: randomVert
   }
 };

@@ -1,52 +1,52 @@
-import './gl';
 import Shader from './shader';
 import shaderSources from '../glsl';
 import VertexArray from './vertexbuffer';
 import ParticleComputeShader from './ParticleComputeShader';
-//import Texture from './texture';
+import { debugDrawTexture } from './utils.js';
+
+import './webgl-debug';
 
 const elm = document.querySelector('#canvas');
-const gl = elm.getContext('webgl');
+const gl = elm.getContext('webgl', {
+  preserveDrawingBuffer: true
+});
 
-const textureShader = new Shader(shaderSources.texture);
-textureShader.compile(gl);
-
-const particleComputeShader = new ParticleComputeShader(elm.width, elm.height);
+const size = 4;
+const particleComputeShader = new ParticleComputeShader(size);
 particleComputeShader.compile(gl);
-//particleComputeShader.compute(gl);
 
-const flatshader = new Shader(shaderSources.solid);
-flatshader.compile(gl);
+const particles = size * size;
 
-const vertexArray = new VertexArray(
-  [
-    1.0, 1.0, 1.0, 1.0,
-    -1.0, 1.0, 0, 1.0,
-    -1.0, -1.0, 0, 0,
-    1.0, -1.0, 1.0, 0
-  ],
-  [0, 1, 2, 0, 2, 3],
-  [2, 2]);
-vertexArray.initialize(gl);
-//const texture = new Texture('dist/image.png');
-//texture.compile(gl);
+const particleRenderShader = new Shader(shaderSources.particleRenderer);
+particleRenderShader.compile(gl);
+const particleVArray = new VertexArray(particles * 4 * 4, particles * 6, [2, 2]);
+for(let i = 0; i < particles; i++) {
+  const x = (i % size) / size;
+  const y = ~~(i / size) / size;
+  particleVArray.pushVertices([
+    0.01, 0.01, x, y,
+    -0.01, 0.01, x, y,
+    -0.01, -0.01, x, y,
+    0.01, -0.01, x, y
+  ]);
+  particleVArray.pushIndex([0, 1, 2, 0, 2, 3].map((num) => num + (i * 4)));
+}
 
-gl.clearColor(1, 1, 1, 1);
+particleVArray.initialize(gl);
+gl.clearColor(0, 0, 0, 1);
+gl.clear(gl.COLOR_BUFFER_BIT);
 function draw() {
   particleComputeShader.compute(gl);
+  particleRenderShader.bind(gl);
+  //particleRenderShader.uniforms.position = particleComputeShader.getPosition();
+  particleRenderShader.uniforms.position = particleComputeShader.getVelocity();
+  particleVArray.bind(gl);
 
-  gl.disable(gl.CULL_FACE);
   gl.clear(gl.COLOR_BUFFER_BIT);
-
-  textureShader.bind(gl);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, particleComputeShader.frontbuffer.texture);
-  textureShader.uniforms.sampler = 0;
-
-  vertexArray.bind(gl);
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  gl.drawElements(gl.TRIANGLES, particles * 6, gl.UNSIGNED_SHORT, 0);
+  particleRenderShader.unbind(gl);
+  particleVArray.unbind(gl);
 
   window.requestAnimationFrame(draw);
 }
-
 draw();
