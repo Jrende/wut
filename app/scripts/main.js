@@ -3,15 +3,15 @@ import shaderSources from '../glsl';
 import VertexArray from './vertexbuffer';
 import ParticleComputeShader from './ParticleComputeShader';
 import { debugDrawTexture } from './utils.js';
-
-import './webgl-debug';
+//import './webgl-debug';
 
 const elm = document.querySelector('#canvas');
 const gl = elm.getContext('webgl', {
   preserveDrawingBuffer: true
 });
 
-const size = 4;
+//const size = 32;
+const size = 64;
 const particleComputeShader = new ParticleComputeShader(size);
 particleComputeShader.compile(gl);
 
@@ -37,9 +37,13 @@ gl.clearColor(0, 0, 0, 1);
 gl.clear(gl.COLOR_BUFFER_BIT);
 function draw() {
   particleComputeShader.compute(gl);
+  //debugDrawTexture(gl, particleRenderShader.getVelocity());
   particleRenderShader.bind(gl);
-  //particleRenderShader.uniforms.position = particleComputeShader.getPosition();
-  particleRenderShader.uniforms.position = particleComputeShader.getVelocity();
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, particleComputeShader.getPosition());
+  particleRenderShader.uniforms.position = 0;
+  gl.bindTexture(gl.TEXTURE_2D, particleComputeShader.getVelocity());
+  particleRenderShader.uniforms.velocity = 1;
   particleVArray.bind(gl);
 
   gl.clear(gl.COLOR_BUFFER_BIT);

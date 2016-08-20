@@ -4,12 +4,17 @@ export default class VertexArray {
       this.vertexData = new Float32Array(vertexData);
     } else if (vertexData instanceof Float32Array) {
       this.vertexData = vertexData;
+    } else {
+      console.log('undefined');
+      this.vertexData = undefined;
     }
 
     if(indexData instanceof Array || Number.isInteger(indexData)) {
       this.indexData = new Uint16Array(indexData);
     } else if (indexData instanceof Uint16Array) {
       this.indexData = indexData;
+    } else {
+      this.indexData = undefined;
     }
     this.attrs = attrs;
     this.isInitialized = false;
@@ -23,9 +28,11 @@ export default class VertexArray {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.vertBuf);
       gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
 
-      this.indexBuf = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuf);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl.STATIC_DRAW);
+      if(this.indexData !== undefined) {
+        this.indexBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuf);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl.STATIC_DRAW);
+      }
       this.isInitialized = true;
     }
   }
@@ -58,7 +65,9 @@ export default class VertexArray {
     }
     const attrSum = this.attrs.reduce((a, b) => a + b);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertBuf);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuf);
+    if(this.indexData !== undefined) {
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuf);
+    }
     let pointer = 0;
     for(let i = 0; i < this.attrs.length; i++) {
       gl.vertexAttribPointer(i, this.attrs[i], gl.FLOAT, false, attrSum * 4, pointer * 4);
@@ -71,7 +80,9 @@ export default class VertexArray {
     for(let i = 0; i < this.attrs.length; i++) {
       gl.disableVertexAttribArray(i);
     }
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    if(this.indexData !== undefined) {
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    }
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 }
