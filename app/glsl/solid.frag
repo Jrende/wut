@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 uniform float alpha;
 uniform float r;
 uniform float g;

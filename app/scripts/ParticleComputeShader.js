@@ -64,23 +64,26 @@ export default class ParticleComputeShader {
 
     this.initializeFramebuffers(gl,
       this.buffers.velocity[1].framebuffer,
-      randomShader);
+      randomShader,
+      [1, 1, 1],
+      1.0);
     this.initializeFramebuffers(gl,
       this.buffers.position[1].framebuffer,
       solidShader,
       [0.5, 0.5, 0]);
   }
 
-  initializeFramebuffers(gl, buffer, shader, colors = [1, 1, 1]) {
+  initializeFramebuffers(gl, buffer, shader, colors = [1, 1, 1], scale = 1.0, seed = 1.0, alpha = 1.0) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, buffer);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     shader.bind(gl);
-    shader.uniforms.seed = Math.random() * 10000.0;
+    shader.uniforms.seed = seed;
+    shader.uniforms.scale = scale;
     shader.uniforms.r = colors[0];
     shader.uniforms.g = colors[1];
     shader.uniforms.b = colors[2];
-    shader.uniforms.alpha = 1.0;
+    shader.uniforms.alpha = alpha;
 
     this.vertexArray.bind(gl);
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
